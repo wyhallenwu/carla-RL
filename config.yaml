@@ -17,3 +17,10 @@ epoch: 500
 sample_n: 1
 training_n: 1
 max_episode_length: 3000
+# config for sac
+value_lr: 0.001
+softq_lr: 0.001
+policy_lr: 0.001
+soft_tau: 0.01
+log_min: -20
+log_max: 2

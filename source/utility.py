@@ -5,6 +5,7 @@ import torch.nn as nn
 import carla
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
+from torchvision import models
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 writer = SummaryWriter(log_dir="./log/", flush_secs=20)
 
@@ -114,19 +115,6 @@ def convert_tensor2control(pred_action: torch.Tensor) -> carla.VehicleControl:
     return carla.VehicleControl(ac[0], ac[1], ac[2])
 
 
-# device = None
-
-
-# def init_gpu(use_gpu=True, gpu_id=0):
-#     global device
-#     if torch.cuda.is_available() and use_gpu:
-#         device = torch.device("cuda:" + str(gpu_id))
-#         print("Using GPU id {}".format(gpu_id))
-#     else:
-#         device = torch.device("cpu")
-#         print("GPU not detected. Defaulting to CPU.")
-
-
 def set_device(gpu_id):
     torch.cuda.set_device(gpu_id)
 
@@ -155,6 +143,21 @@ def map2action(index):
         return carla.VehicleControl(0, 0, 1)
 
 
-def check_average_reward(paths):
-    r = [np.sum(path['rewards']) for path in paths]
+def check_average_frames(paths):
+    r = [np.sum(path['frames']) for path in paths]
     return np.mean(r)
+
+
+def build_resnet():
+    """build resnet return a pretrained resnet50 with no grad."""
+    resnet = models.resnet50(pretrained=True)
+    for para in resnet.parameters():
+        para.requires_grad = False
+    return resnet
+
+
+def setup_seed(seed):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
+    torch.backends.cudnn.deterministic = True

@@ -14,6 +14,7 @@ class Trainer(object):
         self.ac_net = ActorCritic(
             4, self.config['hidden_dim'], self.config['n_layers'], self.config['gamma'], self.config['lr']).to(device)
         self.replaybuffer = ReplayBuffer(self.config['buffer_size'])
+        self.max_average_frames = 0
 
     def train(self, epoch_i):
         """on-policy actor-critic training."""
@@ -24,6 +25,8 @@ class Trainer(object):
         # add trajectories to replaybuffer
         print("add to replaybuffer")
         self.replaybuffer.add_rollouts(paths)
+        # checkpoints
+        self.save_model(paths, epoch_i)
         # sample lastest trajectories for training
         print("update policy")
         training_paths = self.replaybuffer.sample_recent_rollouts(
@@ -36,7 +39,11 @@ class Trainer(object):
         print("*" * 20)
         for i in tqdm(range(self.config['epoch']), desc="Epoch"):
             self.train(i)
-            if (i + 1) % 10 == 0:
-                print(f"save checkpoint at {i + 1}")
-                torch.save(self.ac_net.state_dict(),
-                           f"./checkpoints/model{i}.pt")
+
+    def save_model(self, paths, epoch_i):
+        average_frames = util.check_average_frames(paths)
+        if average_frames > self.max_average_frames:
+            self.max_average_frames = average_frames
+            print(f"save model. Average frames: {average_frames}")
+            torch.save(self.ac_net.state_dict(),
+                       f"checkpoints/a2c/model{epoch_i}.pt")

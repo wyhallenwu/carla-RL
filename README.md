@@ -1,5 +1,5 @@
 # README
-This the final project of reinforcement learning course. Training a model to autonomous vehicle in [`CARLA 0.9.13 releaes`](https://carla.org/).   
+This repo is the final project of reinforcement learning course. Training a model for autonomous vehicle control in [`CARLA (version0.9.13)`](https://carla.org/). The structure of the code may be confusing and some implementations are inelegant(such as `agent.py retreive_data()`), may refactor code in the near future.      
 
 ## environment
 1. carla 0.9.13 release
@@ -12,11 +12,15 @@ Use precompiled Carla [link](https://mirrors.sustech.edu.cn/carla/carla/0.9.13/)
 # download carla from sustech mirror, you can also follow the official instruction
 wget https://mirrors.sustech.edu.cn/carla/carla/0.9.13/CARLA_0.9.13.tar.gz
 tar -zxvf CARLA_0.9.13.tar.gz
+./CarlaUE4.sh -RenderOffScreen
 # set up python environment
 conda env create -f environment.yml
 # test
-python3 run.py
+python3 run.py or
+python3 run_sac.py
 ```
+
+
 ## design details
 > help to modify the algorithm  
 
@@ -35,7 +39,7 @@ actions(`utility.py map2action()`):
 |      2       |   turn right(vehicle.control(1, 1, 0))   |
 |      3       |     brake(vehicle.control(0, 0, 1))      |
 
-rewards(`carlaenv.py get_reward()`):  
+rewards(`carlaenv.py get_reward()`)(A2C):  
 | rewards |              event              |
 | :-----: | :-----------------------------: |
 |  -200   | collision sensor retrieve event |
@@ -43,12 +47,18 @@ rewards(`carlaenv.py get_reward()`):
 |    2    |  take action 0(go straight on)  |
 |    1    |         take action 1,2         |
 
+reward(`carlaenv.py reward_sac()`)(SAC):  
+| reward |              event              |
+| :----: | :-----------------------------: |
+|  -200  | collision sensor retrieve event |
+|   1    |             others              |
+
 
 **RL algorithms:**   
-currently using A2C.
+currently implement A2C and SAC.
 
 
-## todos
+## done
 - [x] wrap the environment of carla following the paradigm of OpenAI gym
   - [x] env() init the world
   - [x] step() return info
@@ -69,8 +79,14 @@ currently using A2C.
   - [x] generate action
   - [x] pay attention to tensor numpy conversion and detach
   - [x] need test
+- [x] add SAC algorithm
+- [ ] refactor code 
 
 
 ## notice
 To run the code on my limited computation resource machine(1 rtx3060), I setting it to sample one episode and then update(online A2C). Moreover, I also directly resize and crop the frames once receiving it and store it in the replaybuffer in Tensor type to save memory. Due to the limited hardware, I just tested under a small episode length but it exactly improves.  
 The reward settings can be further improved. The settings above is compared with serveral different settings. Taking brake frequently is too bad while driving. And if setting it to positive reward, the policy may learn to always brake no matter what it sees.   
+
+**SAC**   
+For SAC, the action space change to be continuous(controling steer[-1, 1]) instead of the discrete settings in A2C. Action is always in the format of carla.VehicleControl(1, steer, 0) where steer is given by the policy.
+

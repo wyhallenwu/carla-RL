@@ -150,3 +150,26 @@ class CarlaEnv(object):
         print(
             f"before exited, there are { len(self.get_all_vehicles())} actors")
         print("exit world")
+
+    # ==================================================================
+    #  helper function for sac
+    # ==================================================================
+
+    def reward_sac(self, collision):
+        if collision != 0:
+            return -200
+        else:
+            return 1
+
+    def step_sac(self, action):
+        assert isinstance(
+            action, carla.VehicleControl), "action is not the carla type."
+        print("take: ", action)
+        self.vehicle_control(action)
+        frame_index = self.world.tick()
+        print(f"after step, current frame is: {frame_index}")
+        observation, collision = self.agent.retrieve_data(frame_index)
+        # reward = self.get_reward(action_index, collision)
+        reward = self.reward_sac(collision)
+        done = 1 if collision != 0 else 0
+        return observation, reward, done
